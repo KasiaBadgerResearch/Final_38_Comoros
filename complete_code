@@ -1,0 +1,53 @@
+# How have infant, under-five, and neonatal deaths evolved relative to one another in Comoros between 1980 and 2020?
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+
+# Folders
+data_raw_folder = "data_raw/"
+data_clean_folder = "data_clean/"
+figures_folder = "figures/"
+
+# Load CSV
+filename = "health_com_filtered.csv"  # Filtered dataset with only relevant rows
+df = pd.read_csv(os.path.join(data_raw_folder, filename))
+
+# Keep only needed columns
+df = df[["Year", "Indicator Name", "Value"]]
+
+# Convert Year and Value to numeric, drop invalid rows
+df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+df["Value"] = pd.to_numeric(df["Value"], errors="coerce")
+df = df.dropna(subset=["Year", "Value"])
+
+# Pivot indicators into separate columns
+df_pivot = df.pivot(index="Year", columns="Indicator Name", values="Value").reset_index()
+df_pivot = df_pivot.sort_values("Year")
+
+print("Pivoted Comoros dataset:")
+display(df_pivot)
+
+# Interpolate missing values for smooth plotting (optional)
+df_plot = df_pivot.interpolate(method='linear')
+
+# Plot the indicators
+plt.figure(figsize=(10,6))
+plt.plot(df_plot["Year"], df_plot["Number of infant deaths"], 
+         marker='o', linestyle='-', label="Number of infant deaths")
+plt.plot(df_plot["Year"], df_plot["Number of under-five deaths"], 
+         marker='o', linestyle='-', label="Number of under-five deaths")
+plt.plot(df_plot["Year"], df_plot["Number of neonatal deaths"], 
+         marker='o', linestyle='-', label="Number of neonatal deaths")
+
+plt.title("Comoros: Infant deaths vs Under-five deaths vs Neonatal deaths (number) (1980-2020)")
+plt.xlabel("Year")
+plt.ylabel("Number")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig(os.path.join(figures_folder, "comoros_infant_deaths_vs_underfive_deaths_vs_neonatal_deaths.png"))
+plt.show()
+
+# Save cleaned CSV
+df_pivot.to_csv(os.path.join(data_clean_folder, "comoros_infant_deaths_vs_underfive_deaths_vs_neonatal_deaths"), index=False)
